@@ -58,5 +58,6 @@ public class CardScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
         TempCardGO.transform.SetParent(GameObject.Find("Canvas").transform);
         TempCardGO.transform.localPosition = new Vector3(2500, 0);
+
     }
 }
