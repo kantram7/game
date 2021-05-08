@@ -4,11 +4,20 @@ using UnityEngine;
 
 using UnityEngine.EventSystems;
 
+public enum FieldType
+{
+    HAND,
+    LField,
+    RField
+}
+
 public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
+    public FieldType Type;
+
     public void OnDrop(PointerEventData eventData)
     {
-        CardScript card = eventData.pointerDrag.GetComponent<CardScript>();
+        CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
         if (card) card.DefaultParent = transform;
     }
@@ -17,7 +26,7 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
     {
         if (eventData.pointerDrag == null) return;
 
-        CardScript card = eventData.pointerDrag.GetComponent<CardScript>();
+        CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
         if (card) card.DefaultTempCardParent = transform;
     }
@@ -26,7 +35,7 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
     {
         if (eventData.pointerDrag == null) return;
 
-        CardScript card = eventData.pointerDrag.GetComponent<CardScript>();
+        CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
         if (card && card.DefaultTempCardParent == transform)
             card.DefaultTempCardParent = card.DefaultParent;
