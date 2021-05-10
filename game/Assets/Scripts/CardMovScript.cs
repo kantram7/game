@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using System.Runtime.CompilerServices;
+using Assets.Scripts.Units;
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +19,8 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     GameObject TempCardGO; // временная карта и клон перетаскиваемой, который займет кё место в Hand
     int PrevIndex; // изначальный индекс карты на своём исходном поле
 
+    public CardControler CC;
+
     void Awake()
     {
         MainCamera = Camera.allCameras[0];
@@ -27,7 +30,7 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     // начало перетаскивания
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (MainCamera.GetComponent<GameManagerScript>().CurGame.BlockChanges) // ну такое
+        if (GameManagerScript.Instance.CurGame.BlockChanges) // ну такое
         {
             eventData.pointerDrag = null;
             return;
@@ -41,8 +44,7 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
         if (FromHand)
         {
-            MainCamera.GetComponent<GameManagerScript>().GiveFieldOneCard(SelfCard, PrevParent, PrevIndex);
-
+            GameManagerScript.Instance.GiveFieldOneCard(SelfCard, PrevParent, PrevIndex);
         }
         else
         {
@@ -73,12 +75,12 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         // если карту перетащили в Hand - карта удаляется
         if (ToHand)
         {
-            Debug.Log("Destroy " + this.name);
+            //Debug.Log("Destroy " + this.name);
 
             if (!FromHand)
-                MainCamera.GetComponent<GameManagerScript>().ChangeMoney(PrevParent, - SelfCard.Cost);
+                GameManagerScript.Instance.ChangeMoney(PrevParent, - SelfCard.Cost);
 
-            Destroy(this.gameObject);
+            CC.DestroyCard();
         }
         // если перетаскивание не с одного поля на другое, то устанавливаем карту в новую позицию
         else if (!SideToSide && EnoughMoney(DefaultParent, SelfCard.Cost))
@@ -87,13 +89,13 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             transform.SetSiblingIndex(TempCardGO.transform.GetSiblingIndex());
 
             if(DefaultParent != PrevParent)
-                MainCamera.GetComponent<GameManagerScript>().ChangeMoney(DefaultParent, SelfCard.Cost);
+                GameManagerScript.Instance.ChangeMoney(DefaultParent, SelfCard.Cost);
 
         }
         else if(FromHand)
         {
-            Debug.Log("Destroy " + this.name);
-            Destroy(this.gameObject);
+            //Debug.Log("Destroy " + this.name);
+            CC.DestroyCard();
         }
         // иначе возвращаем на исходное место
         else
@@ -165,12 +167,12 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     {
         if (PrevParent == field) return true;
 
-        return MainCamera.GetComponent<GameManagerScript>().EnoughMoney(field, cost);
+        return GameManagerScript.Instance.EnoughMoney(field, cost);
     }
 
     ICard SelfCard
     { get {
-            return transform.GetComponent<CardInfoScript>().SelfCard;
+            return transform.GetComponent<CardControler>().SelfCard;
         }
     }
 }

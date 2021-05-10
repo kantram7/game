@@ -4,45 +4,65 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+using Assets.Scripts.Units;
+
 
 public class CardInfoScript : MonoBehaviour
 {
-    public ICard SelfCard;
+    public CardControler CC;
+
     public Text Name, Cost, Defence, Attack, Health;
-    public Image ImageLogo;
+    public Image ImageLogo, CurEffect;
     public GameObject Abilities;
 
-    public void ShowCardInfo(ICard card)
+    public void ShowCardInfo()
     {
-        SelfCard = card;
+        transform.name = CC.SelfCard.Name;
 
-        transform.name = card.Name;
+        //Debug.Log("Create " + transform.name);
 
-        Debug.Log("Create " + transform.name);
-
-        ImageLogo.sprite = card.Logo;
+        ImageLogo.sprite = ((ICardLogo)CC.SelfCard).Logo;
         ImageLogo.preserveAspect = true;
 
-        Name.text = card.Name;
-        Cost.text = card.Cost.ToString();
-        Defence.text = card.Defence.ToString();
-        Attack.text = card.Attack.ToString();
-        Health.text = card.Health.ToString();
+        Name.text = CC.SelfCard.Name;
+        Cost.text = CC.SelfCard.Cost.ToString();
+        Defence.text = CC.SelfCard.Defence.ToString();
+        Attack.text = CC.SelfCard.Attack.ToString();
+        Health.text = CC.SelfCard.Health.ToString();
 
-        if (card.Abitilies.Count != 0)
+        // пример отрисовки абилок
+        switch (CC.WhichAbilityHas())
         {
-            foreach (Image abi in card.Abitilies) {
-
-                Debug.Log("Abi");
-
+            case HasAbilities.DISTANT:
                 Instantiate(GameObject.Find("IconExample"), Abilities.transform, false);
-
-            }
+                break;
+            case HasAbilities.APP:
+                break;
+            case HasAbilities.CLONE:
+                break;
+            case HasAbilities.HEAL:
+                break;
+            default:
+                break;
         }
     }
 
-    private void Start()
+    public void ShowEffect(Effect effect)
     {
-        //ShowCardInfo(CardManager.AllCards[transform.GetSiblingIndex()]);
+        switch (effect)
+        {
+            case Effect.APP: return;
+            case Effect.DEAD:
+                CurEffect.sprite = Resources.Load<Sprite>("Sprites/test_img/dead");
+                CurEffect.color = new Color(0, 0, 0, (float).5);
+                CurEffect.gameObject.SetActive(true);
+                break;
+            default: return;
+        }
+    }
+
+    public void UpdateHealth()
+    {
+        Health.text = ((int)CC.CurrentHealth).ToString();
     }
 }

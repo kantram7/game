@@ -20,6 +20,8 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
         CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
         if (card) card.DefaultParent = transform;
+
+        //Debug.Log(" 1 " + transform.name);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -29,6 +31,8 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
         CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
         if (card) card.DefaultTempCardParent = transform;
+
+        //Debug.Log(" 2 " + transform.name);
     }
 
     public void OnPointerExit(PointerEventData eventData)
