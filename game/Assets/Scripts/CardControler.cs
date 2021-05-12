@@ -5,14 +5,21 @@ using UnityEngine.UI;
 using TMPro;
 
 using Assets.Scripts.Units;
+using static Assets.Scripts.Additions.Addition;
 
-using System.Runtime.CompilerServices; // inline
+// using System.Runtime.CompilerServices; // inline
 
 public enum Effect
 {
     NO,
     DEAD,
     APP
+}
+
+public enum AttackType
+{
+    CLOSE,
+    DISTANT
 }
 
 public class CardControler : MonoBehaviour
@@ -64,31 +71,48 @@ public class CardControler : MonoBehaviour
         return ToAbilityClass().CanUseAbility(abi);
     }
 
-    public void GetDamage(double damage)
+    public void GetDamage(CardControler enemyCard, AttackType damageType)
     {
+        if (!IsAlive() || !enemyCard.IsAlive()) return;
+
         if(CurEffect == Effect.APP)
         {
-            if (UnityEngine.Random.Range(0, 2) == 1) CurEffect = 0;
+            if (RamdomPersent(damageType == AttackType.CLOSE ? 0.5 : 0.7))
+            {
+                CurEffect = 0;
+                DestroyApp();
+                GameManager.PrintMovieInfo(SelfCard.Name + " снял защиту у " + enemyCard.SelfCard.Name);
+            }
+            else
+            {
+                GameManager.PrintMovieInfo(SelfCard.Name + " не пробил защиту у " + enemyCard.SelfCard.Name);
+            }
             return;
         }
 
-        CurrentHealth -= ((SelfCard.Defence <= damage) ? (damage) : (damage + SelfCard.Defence) / 2);
+        int enemyAttack = enemyCard.SelfCard.Attack;
+        double resultDamage;
+
+        if(damageType == AttackType.CLOSE)
+            resultDamage = ((SelfCard.Defence <= enemyAttack) ? (enemyAttack) : (enemyAttack + SelfCard.Defence) / 2);
+        else
+            resultDamage = ((SelfCard.Defence <= enemyAttack) ? (enemyAttack / 2) : (enemyAttack + SelfCard.Defence) / 4);
+
+        CurrentHealth -= resultDamage;
+        GameManager.PrintMovieInfo(enemyCard.SelfCard.Name + " нанес " + resultDamage + " урона " + SelfCard.Name
+            + (damageType == AttackType.CLOSE ? "" : "(дист. атака)"));
+
         CheckAlive();
     }
 
-    // ответный урон при атаке игнорирует щит
-    // разные методы - потом изменить механизм на что-то более логичное (и разное для атаки/ответки)
-    public void OnDamageDeal(double counterDamage)
-    {
-        CurrentHealth -= counterDamage * 0.1;
-        CheckAlive();
-    }
+
     // здесь потом картинку, что умер, и после хода удалить карту
     public void CheckAlive()
     {
         if (!IsAlive()) 
         {
             CurrentHealth = 0;
+            this.CurEffect = Effect.DEAD;
             CardInfo.ShowEffect(Effect.DEAD);
         }
         CardInfo.UpdateHealth();
@@ -96,8 +120,48 @@ public class CardControler : MonoBehaviour
 
     public void GetHeal()
     {
-        if (CurrentHealth < SelfCard.Health && CurrentHealth != 0) CurrentHealth += (SelfCard.Health - CurrentHealth) * 0.5;
+        if (!RamdomPersent(0.3)) return;
+
+        if (CurrentHealth < SelfCard.Health && IsAlive())
+        {
+            double healedSum = ((SelfCard.Health - CurrentHealth) * 0.5);
+            CurrentHealth += healedSum;
+            GameManager.PrintMovieInfo(SelfCard.Name + " восстановил " + healedSum + " здоровья");
+        }
+
         CardInfo.UpdateHealth();
+    }
+
+    public void GetApp()
+    {
+        if (RamdomPersent(0.5)) return;
+
+        // проверка возможности апов в gamemanager
+
+        this.CurEffect = Effect.APP;
+        CardInfo.ShowEffect(Effect.APP);
+
+        GameManager.PrintMovieInfo("Щит установлен");
+    }
+
+    public double Distant()
+    {
+        return SelfCard.Attack * 0.5;
+    }
+
+    public bool Clone()
+    {
+        if (!RamdomPersent(0.1) || !IsAlive())
+            return false;
+
+        GameManager.PrintMovieInfo("Клонирован " + SelfCard.Name);
+        return true;
+    }
+
+    public void DestroyApp()
+    {
+        this.CurEffect = Effect.NO;
+        CardInfo.ShowEffect(Effect.NO);
     }
 
     public bool IsAlive()

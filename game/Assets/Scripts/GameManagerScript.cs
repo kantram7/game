@@ -56,7 +56,7 @@ public class GameManagerScript : MonoBehaviour
     public Button PrevMovie, NexMovie, MakeMovie,
                   TestButton;
 
-    public Text LMoney, RMoney;
+    public Text LMoney, RMoney, VictoryResult;
     public int LMoneySum, RMoneySum;
 
     List<CardControler> LCards = new List<CardControler>(),
@@ -119,18 +119,16 @@ public class GameManagerScript : MonoBehaviour
 
     void Test(int i)
     {
-        Debug.Log("Test == " + i);
+        UpdateFields();
     }
 
          
     void Movie()
     {
-        CheckVictory(); // чтоб не было ошибки при пустом поле (пол€х). Ћучше кнопку хода при этом блокировать, конечно
+        if (CheckVictory()) return; // чтоб не было ошибки при пустом поле (пол€х). Ћучше кнопку хода при этом блокировать, конечно
         // или булю какую сделать, что хоть одна карта есть там и там
 
         ReadCardsToLists();
-
-        if (RCards.Count + LCards.Count == 0) return; // что-нибудь придумать
 
         CreateHistory();
 
@@ -148,7 +146,7 @@ public class GameManagerScript : MonoBehaviour
         CloseAttack(turn);
         SpecAttacks(turn);
 
-        CheckVictory();
+        if (CheckVictory()) return;
     }
 
     void MakeNewGame()
@@ -156,6 +154,9 @@ public class GameManagerScript : MonoBehaviour
         //Debug.Log("starts MakeNewGame");
 
         CurGame.BlockChanges = false;
+
+        LockScreen.SetActive(false);
+
 
         PrevMovie.interactable = false;
         NexMovie.interactable = false;
@@ -226,20 +227,26 @@ public class GameManagerScript : MonoBehaviour
 
     void ClearFields()
     {
-        foreach (Transform card in RField)
-        {
-            Destroy(card.gameObject);
-        }
-        foreach (Transform card in LField)
-        {
-            Destroy(card.gameObject);
+        foreach (Transform field in new List<Transform> { RField, LField }) {
+            foreach (Transform card in field)
+            {
+                Destroy(card.gameObject);
+            }
         }
         LCards = RCards = new List<CardControler>();
     }
 
     void UpdateFields()
     {
-
+        foreach (Transform field in new List<Transform> { RField, LField })
+        {
+            foreach (Transform card in field)
+            {
+                CardControler curCard = card.GetComponent<CardControler>();
+                if (!curCard.IsAlive()) Destroy(card.gameObject);
+            }
+        }
+        CheckVictory();
     }
 
     public bool EnoughMoney(Transform field, int cost)
@@ -258,73 +265,128 @@ public class GameManagerScript : MonoBehaviour
 
     void CloseAttack(bool turn)
     {
-        CardControler RFirstCard = RField.GetChild(0).GetComponent<CardControler>();
-        CardControler LFirstCard = LField.GetChild(LField.childCount - 1).GetComponent<CardControler>();
+        CardControler TurnFirstCard, TurnSecondCard;
 
         if (turn)
         {
-            LFirstCard.GetDamage(RFirstCard.SelfCard.Attack); // механизм сколько отнимать жизни в CC
-            RFirstCard.OnDamageDeal(LFirstCard.SelfCard.Attack);
-
-            Debug.Log((turn ? "Right " : "Left ") + RFirstCard.SelfCard.Name + " attack " + (!turn ? "right " : "reft ") + LFirstCard.SelfCard.Name + 
-                " with damage " + RFirstCard.SelfCard.Attack + " and back damage " + LFirstCard.SelfCard.Attack * 0.1);
+            TurnFirstCard = (RField).GetChild(0).GetComponent<CardControler>();
+            TurnSecondCard = (LField).GetChild(LField.childCount - 1).GetComponent<CardControler>();
         }
         else
         {
-            RFirstCard.GetDamage(LFirstCard.SelfCard.Attack);
-            LFirstCard.OnDamageDeal(RFirstCard.SelfCard.Attack);
-
-            Debug.Log((turn ? "Right " : "Left ") + LFirstCard.SelfCard.Name + " attack " + (!turn ? "right " : "reft ") + RFirstCard.SelfCard.Name +
-                " with damage " + LFirstCard.SelfCard.Attack + " and back damage " + RFirstCard.SelfCard.Attack * 0.1);
+            TurnSecondCard = (RField).GetChild(0).GetComponent<CardControler>();
+            TurnFirstCard = (LField).GetChild(LField.childCount - 1).GetComponent<CardControler>();
         }
-        //Debug.Log("CLOSE ATTACK@@#");
-    }
 
-    void DistAttack()
-    {
+        TurnSecondCard.GetDamage(TurnFirstCard, AttackType.CLOSE); // механизм сколько отнимать жизни в CC
+        TurnFirstCard.GetDamage(TurnSecondCard, AttackType.CLOSE); // ответна€ атака
 
     }
 
-    void CheckKilled() // нужен ли?
+    void DistantAttack(CardControler attackCard, Transform enemyField) // нужен ли?
     {
-
+        int atackedPosition = UnityEngine.Random.Range(0, (enemyField.childCount >= 3 ? 3 : enemyField.childCount));
+        CardControler enemyCard = enemyField.GetChild(atackedPosition).GetComponent<CardControler>();
+        enemyCard.GetDamage(attackCard, AttackType.DISTANT);
     }
 
     void SpecAttacks(bool turn)
     {
-        for(int i = 1; i < RField.childCount; i++)
+        List<Transform> fields = new List<Transform>{ (turn ? RField : LField), (turn ? LField : RField) };
+
+        for(int j = 0; j < 2; j++)
         {
-            CardControler CurCard = RField.GetChild(i).GetComponent<CardControler>();
+            Transform curField = fields[j];
 
-            if(CurCard.WhichAbilityHas() == HasAbilities.HEAL)
+            for (int i = 0; i < curField.childCount; i++)
             {
-                CardControler PrevCard = RField.GetChild(i - 1).GetComponent<CardControler>();
-                if (PrevCard.CanUseAbility(UseAbilities.HEAL))
-                {
-                    PrevCard.GetHeal();
-                    Debug.Log("Right Healer heal " + PrevCard.SelfCard.Name);
-                }
-                // говнокод
-                if (i == RField.childCount - 1) continue;
+                CardControler CurCard = curField.GetChild(i).GetComponent<CardControler>();
 
-                CardControler NextCard = RField.GetChild(i + 1).GetComponent<CardControler>();
-                if (((AbilityClass)NextCard.SelfCard).CanUseAbility(UseAbilities.HEAL))
+                switch (CurCard.WhichAbilityHas())
                 {
-                    NextCard.GetHeal();
-                    Debug.Log("Right Healer heal " + NextCard.SelfCard.Name);
+                    case HasAbilities.HEAL:
+                        foreach(Transform card in NearCards(curField, i))
+                        {
+                            CardControler cardCC = card.GetComponent<CardControler>();
+                            if (cardCC.CanUseAbility(UseAbilities.HEAL)) cardCC.GetHeal();
+                        }
+                        break;
+
+                    case HasAbilities.APP:
+                        foreach (Transform card in NearCards(curField, i))
+                        {
+                            CardControler cardCC = card.GetComponent<CardControler>();
+                            if (cardCC.CanUseAbility(UseAbilities.APP)) cardCC.GetApp();
+                        }
+                        break;
+                    case HasAbilities.CLONE:
+                        foreach (Transform card in NearCards(curField, i))
+                        {
+                            CardControler cardCC = card.GetComponent<CardControler>();
+                            if (cardCC.CanUseAbility(UseAbilities.CLONE) && cardCC.Clone())
+                            {
+                                CreateCardPref(cardCC.SelfCard, curField, card.GetSiblingIndex()); // Ќужно клонировать с тем же здоровьем или как новую?
+                            }
+                        }
+                        break;
+                    case HasAbilities.DISTANT:
+                        DistantAttack(CurCard, (j == 0 ? fields[1] : fields[0]));
+                        break;
+
+                    default: break;
                 }
             }
+
         }
     }
 
-    void CheckVictory()
+    List<Transform> NearCards(Transform field, int index)
     {
-        if (LField.childCount + RField.childCount == 0)
+        List<Transform> nearCards = new List<Transform>();
+
+        if ((field == RField && index == 0) || (field == LField && index == LField.childCount - 1)) return nearCards; // первые карты
+
+        if(field == LField)
         {
-            LockScreen.SetActive(true);
+            if (index != 0) nearCards.Add(field.GetChild(index - 1));
+            nearCards.Add(field.GetChild(index + 1));
         }
-        else if (RField.childCount == 0) return;
-        else if (LField.childCount == 0) return;
-        else return;
+        else
+        {
+            if (index != field.childCount - 1) nearCards.Add(field.GetChild(index + 1));
+            nearCards.Add(field.GetChild(index - 1));
+        }
+        return nearCards;
+    }
+
+    bool CheckVictory()
+    {
+        if (LField.childCount != 0 && RField.childCount != 0)
+        {
+            return false;
+        }
+
+        if (LField.childCount == 0 && RField.childCount == 0)
+        {
+            EndGame("Ќичь€");
+        }
+        else if (LField.childCount == 0)
+        {
+            EndGame("Right win");
+        }
+        else EndGame("Left win");
+
+        return true;
+    }
+
+    void EndGame(string result)
+    {
+        LockScreen.SetActive(true);
+        VictoryResult.text = result;
+    }
+
+    public void PrintMovieInfo(string info) // потом здесь будет вывод в окошко (наверное)
+    {
+        Debug.Log(info);
     }
 }

@@ -23,6 +23,12 @@ namespace Assets.Scripts.Additions
                 return null;
             }
         }
+
+        // принимает процент успеха в виде десятичного числа
+        public static bool RamdomPersent(double persent)
+        {
+            return UnityEngine.Random.value > (1 - persent);
+        }
     }
 
     public static class IEnumerableExtension

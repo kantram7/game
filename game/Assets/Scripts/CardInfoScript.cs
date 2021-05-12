@@ -51,11 +51,19 @@ public class CardInfoScript : MonoBehaviour
     {
         switch (effect)
         {
-            case Effect.APP: return;
+            case Effect.APP:
+                CurEffect.sprite = Resources.Load<Sprite>("Sprites/test_img/shield");
+                CurEffect.color = new Color(0, 0, 0, (float).5);
+                CurEffect.gameObject.SetActive(true);
+                break;
             case Effect.DEAD:
                 CurEffect.sprite = Resources.Load<Sprite>("Sprites/test_img/dead");
                 CurEffect.color = new Color(0, 0, 0, (float).5);
                 CurEffect.gameObject.SetActive(true);
+                break;
+            case Effect.NO:
+                CurEffect.gameObject.SetActive(false);
+                Debug.Log("no app");
                 break;
             default: return;
         }

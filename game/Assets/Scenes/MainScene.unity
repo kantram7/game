@@ -1100,6 +1100,7 @@ MonoBehaviour:
   TestButton: {fileID: 529575730}
   LMoney: {fileID: 1627123129}
   RMoney: {fileID: 736689705}
+  VictoryResult: {fileID: 566232061}
   LMoneySum: 0
   RMoneySum: 0
   LockScreen: {fileID: 924601910}
