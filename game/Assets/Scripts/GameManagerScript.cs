@@ -59,10 +59,11 @@ public class GameManagerScript : MonoBehaviour
     public Text LMoney, RMoney, VictoryResult;
     public int LMoneySum, RMoneySum;
 
-    List<CardControler> LCards = new List<CardControler>(),
-                        RCards = new List<CardControler>();
+    List<(ICard, double, Effect)> LCards = new List<(ICard, double, Effect)>(),
+                               RCards = new List<(ICard, double, Effect)>();
 
-    List<((List<CardControler>, int), (List<CardControler>, int))> history;
+    List<((List<(ICard, double, Effect)>, int), (List<(ICard, double, Effect)>, int))> history;
+    int PrevHistoryIndex = -1;
 
     public GameObject LockScreen;
 
@@ -86,6 +87,9 @@ public class GameManagerScript : MonoBehaviour
         RandomRight.onClick.AddListener(() => { RandomField(RField, RMoney); });
         MakeMovie.onClick.AddListener(Movie);
 
+        NexMovie.onClick.AddListener(ReturnNexMovie);
+        PrevMovie.onClick.AddListener(ReturnPrevMovie);
+
         TestButton.onClick.AddListener(() => { Test(121); }); // Test
 
         GiveFieldCards(CurGame.HandCards, Hand);
@@ -93,28 +97,90 @@ public class GameManagerScript : MonoBehaviour
         MakeNewGame();
     }
 
+    void ReturnNexMovie() // test
+    {
+        PrevMovie.interactable = true;
+        ReturnHistory(PrevHistoryIndex++);
+        if(PrevHistoryIndex == history.Count - 1) NexMovie.interactable = false;
+
+
+        Debug.Log(PrevHistoryIndex);
+    }
+
+    void ReturnPrevMovie() // test
+    {
+        NexMovie.interactable = true;
+        ReturnHistory(PrevHistoryIndex);
+        PrevHistoryIndex--;
+        if (PrevHistoryIndex < 0) PrevMovie.interactable = false;
+
+        Debug.Log(PrevHistoryIndex);
+    }
+
+    void ReturnHistory(int index)
+    {
+        ClearFields();
+        ((List<(ICard, double, Effect)>, int), (List<(ICard, double, Effect)>, int)) movie = history[PrevHistoryIndex];
+
+        // возврат золота
+        LMoneySum = movie.Item1.Item2;
+        RMoneySum = movie.Item2.Item2;
+        UpdateGold();
+
+        List<(ICard, double, Effect)> LCardsAdd = movie.Item1.Item1;
+        List<(ICard, double, Effect)> RCardsAdd = movie.Item2.Item1;
+
+        foreach (var cardInfo in LCardsAdd)
+        {
+            CreateCardPref(cardInfo.Item1, LField, -1, (CardControler CC) =>
+            {
+                CC.AddEffect(cardInfo.Item3);
+                CC.UpdateCurrentHealth(cardInfo.Item2);
+            });
+        }
+        foreach (var cardInfo in RCardsAdd)
+        {
+            CreateCardPref(cardInfo.Item1, RField, -1, (CardControler CC) =>
+            {
+                CC.AddEffect(cardInfo.Item3);
+                CC.UpdateCurrentHealth(cardInfo.Item2);
+            });
+        }
+    }
+
     void ReadCardsToLists()
     {
-        foreach(Transform card in RField)
+        LCards = new List<(ICard, double, Effect)>();
+        RCards = new List<(ICard, double, Effect)>();
+
+        //Debug.Log(LCards.Count + " " + RCards.Count);
+
+        foreach (Transform card in RField)
         {
-            RCards.Add(card.GetComponent<CardControler>());
+            CardControler CCard = card.GetComponent<CardControler>();
+            RCards.Add((CCard.SelfCard, CCard.CurrentHealth, CCard.CurEffect));
         }
         foreach (Transform card in LField)
         {
-            LCards.Add(card.GetComponent<CardControler>());
+            CardControler CCard = card.GetComponent<CardControler>();
+            LCards.Add((CCard.SelfCard, CCard.CurrentHealth, CCard.CurEffect));
         }
-        LCards.Reverse();
+        //LCards.Reverse(); // ?
+
+        //Debug.Log(LCards.Count + " " + RCards.Count);
     }
 
     void CreateHistory()
     {
+        //Debug.Log(LCards.Count + " " + RCards.Count);
 
-        (List<CardControler>, int) LPair = (LCards, LMoneySum),
-                                    RPair = (RCards, RMoneySum);
+        history.RemoveRange(PrevHistoryIndex + 1, history.Count - 1 - PrevHistoryIndex); // check
+        history.Add(((LCards, LMoneySum), (RCards, RMoneySum)));
+        PrevHistoryIndex++;
 
-        ((List<CardControler>, int), (List<CardControler>, int)) pair = ( LPair, RPair );
+        Debug.Log(PrevHistoryIndex);
 
-        history.Add(pair);
+        //LCards = RCards = new List<(ICard, double, Effect)>();
     }
 
     void Test(int i)
@@ -137,12 +203,14 @@ public class GameManagerScript : MonoBehaviour
         RandomLeft.interactable = false;
         RandomRight.interactable = false;
         PrevMovie.interactable = true;
-        NexMovie.interactable = true;
+        NexMovie.interactable = false;
 
         // механизм хода
         // .........
         bool turn = Turn;
-        Debug.Log("Its turn " + (turn ? "Right " : "Left ") + "player");
+
+        PrintMovieInfo("Its turn " + (turn ? "Right " : "Left ") + "player");
+
         CloseAttack(turn);
         SpecAttacks(turn);
 
@@ -162,13 +230,14 @@ public class GameManagerScript : MonoBehaviour
         NexMovie.interactable = false;
         RandomLeft.interactable = true;
         RandomRight.interactable = true;
+        MakeMovie.interactable = true;
 
         LMoneySum = RMoneySum = GoldAmount;
         UpdateGold();
 
         ClearFields();
 
-        history = new List<((List<CardControler>, int), (List<CardControler>, int))>();
+        history = new List<((List<(ICard, double, Effect)>, int), (List<(ICard, double, Effect)>, int))>();
     }
 
     void RandomField(Transform field, Text money)
@@ -191,7 +260,7 @@ public class GameManagerScript : MonoBehaviour
 
         foreach (ICard card in cards)
         {
-            GiveFieldOneCard(card, field, field == LField ? 0 : -1);
+            GiveFieldOneCard(card, field, field == LField ? 0 : -1); // убрать передачу индекса, есть reverse
         }
     }
 
@@ -202,7 +271,7 @@ public class GameManagerScript : MonoBehaviour
         CreateCardPref(card, field, index);
     }
 
-    void CreateCardPref(ICard card, Transform field, int index = -1)
+    void CreateCardPref(ICard card, Transform field, int index = -1, Action<CardControler> MutCard = null)
     {
         GameObject cardGO = Instantiate(Card, field, false);
         CardControler cardContr = cardGO.GetComponent<CardControler>();
@@ -213,6 +282,8 @@ public class GameManagerScript : MonoBehaviour
         }
 
         cardContr.Init(card);
+
+        MutCard?.Invoke(cardContr);
     }
 
 
@@ -233,7 +304,7 @@ public class GameManagerScript : MonoBehaviour
                 Destroy(card.gameObject);
             }
         }
-        LCards = RCards = new List<CardControler>();
+        LCards = RCards = new List<(ICard, double, Effect)>();
     }
 
     void UpdateFields()
@@ -382,6 +453,9 @@ public class GameManagerScript : MonoBehaviour
     void EndGame(string result)
     {
         LockScreen.SetActive(true);
+        MakeMovie.interactable = false;
+        RandomLeft.interactable = false;
+        RandomRight.interactable = false;
         VictoryResult.text = result;
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 using Assets.Scripts.Units;
 using static Assets.Scripts.Additions.Addition;
@@ -79,7 +80,7 @@ public class CardControler : MonoBehaviour
         {
             if (RamdomPersent(damageType == AttackType.CLOSE ? 0.5 : 0.7))
             {
-                CurEffect = 0;
+                AddEffect(Effect.NO);
                 DestroyApp();
                 GameManager.PrintMovieInfo(SelfCard.Name + " снял защиту у " + enemyCard.SelfCard.Name);
             }
@@ -90,19 +91,31 @@ public class CardControler : MonoBehaviour
             return;
         }
 
-        int enemyAttack = enemyCard.SelfCard.Attack;
-        double resultDamage;
+        double enemyAttackCorected = enemyCard.SelfCard.Attack * ((1.0 / enemyCard.SelfCard.Health) * enemyCard.CurrentHealth);
+        double defenceCorected = SelfCard.Defence * ((1.0 / SelfCard.Health) * CurrentHealth);
 
-        if(damageType == AttackType.CLOSE)
-            resultDamage = ((SelfCard.Defence <= enemyAttack) ? (enemyAttack) : (enemyAttack + SelfCard.Defence) / 2);
-        else
-            resultDamage = ((SelfCard.Defence <= enemyAttack) ? (enemyAttack / 2) : (enemyAttack + SelfCard.Defence) / 4);
+        double resultDamage = (enemyAttackCorected / defenceCorected) * enemyAttackCorected;
 
-        CurrentHealth -= resultDamage;
-        GameManager.PrintMovieInfo(enemyCard.SelfCard.Name + " нанес " + resultDamage + " урона " + SelfCard.Name
+        if (damageType == AttackType.DISTANT)
+            resultDamage *= .5;
+
+
+        UpdateCurrentHealth(CurrentHealth - resultDamage);
+        GameManager.PrintMovieInfo(enemyCard.SelfCard.Name + " нанес " + Math.Round(resultDamage, 2) + " урона " + SelfCard.Name
             + (damageType == AttackType.CLOSE ? "" : "(дист. атака)"));
 
         CheckAlive();
+    }
+    public void AddEffect(Effect effect)
+    {
+        this.CurEffect = effect;
+        CardInfo.ShowEffect(effect);
+    }
+
+    public void UpdateCurrentHealth(double newCurHealth)
+    {
+        CurrentHealth = newCurHealth < 0 ? 0 : newCurHealth;
+        CardInfo.UpdateHealth();
     }
 
 
@@ -111,11 +124,8 @@ public class CardControler : MonoBehaviour
     {
         if (!IsAlive()) 
         {
-            CurrentHealth = 0;
-            this.CurEffect = Effect.DEAD;
-            CardInfo.ShowEffect(Effect.DEAD);
+            AddEffect(Effect.DEAD);
         }
-        CardInfo.UpdateHealth();
     }
 
     public void GetHeal()
@@ -125,21 +135,18 @@ public class CardControler : MonoBehaviour
         if (CurrentHealth < SelfCard.Health && IsAlive())
         {
             double healedSum = ((SelfCard.Health - CurrentHealth) * 0.5);
-            CurrentHealth += healedSum;
+            UpdateCurrentHealth(CurrentHealth + healedSum);
             GameManager.PrintMovieInfo(SelfCard.Name + " восстановил " + healedSum + " здоровья");
         }
-
-        CardInfo.UpdateHealth();
     }
 
     public void GetApp()
     {
-        if (RamdomPersent(0.5)) return;
+        if (RamdomPersent(0.5) || !IsAlive()) return;
 
         // проверка возможности апов в gamemanager
 
-        this.CurEffect = Effect.APP;
-        CardInfo.ShowEffect(Effect.APP);
+        AddEffect(Effect.APP);
 
         GameManager.PrintMovieInfo("Щит установлен");
     }
