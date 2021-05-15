@@ -373,7 +373,7 @@ public class GameManagerScript : MonoBehaviour
 
     }
 
-    void DistantAttack(CardControler attackCard, Transform enemyField) // нужен ли?
+    void DistantAttack(CardControler attackCard, Transform enemyField, int index) // нужен ли?
     {
         int atackedPosition = UnityEngine.Random.Range(0, (enemyField.childCount >= 3 ? 3 : enemyField.childCount));
         CardControler enemyCard = enemyField.GetChild(atackedPosition).GetComponent<CardControler>();
@@ -420,7 +420,7 @@ public class GameManagerScript : MonoBehaviour
                         }
                         break;
                     case HasAbilities.DISTANT:
-                        DistantAttack(CurCard, (j == 0 ? fields[1] : fields[0]));
+                        if(!FirstCards(i, curField)) DistantAttack(CurCard, (j == 0 ? fields[1] : fields[0]), i);
                         break;
 
                     default: break;
@@ -434,7 +434,7 @@ public class GameManagerScript : MonoBehaviour
     {
         List<Transform> nearCards = new List<Transform>();
 
-        if ((field == RField && index == 0) || (field == LField && index == LField.childCount - 1)) return nearCards; // первые карты
+        if (FirstCards(index, field)) return nearCards; // первые карты
 
         if(field == LField)
         {
@@ -447,6 +447,12 @@ public class GameManagerScript : MonoBehaviour
             nearCards.Add(field.GetChild(index - 1));
         }
         return nearCards;
+    }
+
+    bool FirstCards(int index, Transform field)
+    {
+        if ((field == RField && index == 0) || (field == LField && index == LField.childCount - 1)) return true;
+        return false;
     }
 
     bool CheckVictory()
