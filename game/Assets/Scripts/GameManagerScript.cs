@@ -80,6 +80,13 @@ public class Game
     }
 }
 
+public enum Formation
+{
+    Vertical,
+    Horizontal,
+    Three
+}
+
 public class GameManagerScript : MonoBehaviour
 {
     public static GameManagerScript Instance;
@@ -87,12 +94,12 @@ public class GameManagerScript : MonoBehaviour
     const int GoldAmount = 120;
 
     public Game CurGame;
-    public Transform LField, RField, Hand;
-    public GameObject Card;
+    public Transform LField, RField, Hand, VLField, VRField;
+    public GameObject Card, Message;
 
     public Button NewGame, RandomLeft, RandomRight;
     public Button PrevMovie, NexMovie, MakeMovie,
-                  TestButton;
+                  TestButton, TestButton_2;
 
     public Text LMoney, RMoney, VictoryResult;
     public int LMoneySum, RMoneySum;
@@ -100,12 +107,22 @@ public class GameManagerScript : MonoBehaviour
     List<(ICard, double, Effect)> LCards = new List<(ICard, double, Effect)>(),
                                   RCards = new List<(ICard, double, Effect)>();
 
+    public ScrollRect log;
+
 
     public GameObject LockScreen;
 
+    public Formation form = Formation.Horizontal;
+
     bool Turn
     {
-        get { return UnityEngine.Random.Range(0, 2) == 1; }
+        get { return _turn; }
+        set { _turn = value; }
+    }
+    bool _turn;
+    void UpdateTurn()
+    {
+        Turn = UnityEngine.Random.Range(0, 2) == 1;
     }
 
     private void Awake()
@@ -127,10 +144,25 @@ public class GameManagerScript : MonoBehaviour
         PrevMovie.onClick.AddListener(ReturnPrevMovie);
 
         TestButton.onClick.AddListener(() => { Test(121); }); // Test
+        TestButton_2.onClick.AddListener(ChangeToVertical);
 
         GiveFieldCards(CurGame.HandCards, Hand);
 
         MakeNewGame();
+    }
+
+    void ChangeToVertical()
+    {
+        form = Formation.Vertical;
+
+
+        LField.gameObject.SetActive(false);
+        VLField.gameObject.SetActive(true);
+        RField.gameObject.SetActive(false);
+        VRField.gameObject.SetActive(true);
+        LField = VLField;
+        RField = VRField;
+
     }
 
     void ReturnNexMovie() // test
@@ -217,6 +249,8 @@ public class GameManagerScript : MonoBehaviour
         if (CheckVictory()) return; // чтоб не было ошибки при пустом поле (полях). Лучше кнопку хода при этом блокировать, конечно
         // или булю какую сделать, что хоть одна карта есть там и там
 
+        PrintMovieInfo("----------- НОВЫЙ ХОД ------------");
+
         CreateHistory();
         CurGame.MakeMovie();
 
@@ -229,12 +263,12 @@ public class GameManagerScript : MonoBehaviour
 
         // механизм хода
         // .........
-        bool turn = Turn;
+        UpdateTurn();
 
-        PrintMovieInfo("Its turn " + (turn ? "Right " : "Left ") + "player");
+        PrintMovieInfo("Its turn " + PrintTurn() + "player");
 
-        CloseAttack(turn);
-        SpecAttacks(turn);
+        CloseAttack(Turn);
+        SpecAttacks(Turn);
 
         if (CheckVictory()) return;
 
@@ -243,6 +277,7 @@ public class GameManagerScript : MonoBehaviour
     void MakeNewGame()
     {
         CurGame.ClearHistory();
+        ClearLog();
 
         CurGame.BlockChanges = false;
 
@@ -277,10 +312,11 @@ public class GameManagerScript : MonoBehaviour
 
     void GiveFieldCards(List<ICard> cards, Transform field)
     {
+        Debug.Log(cards[0].Name);
 
         foreach (ICard card in cards)
         {
-            GiveFieldOneCard(card, field, field == LField ? 0 : -1); // убрать передачу индекса, есть reverse
+            GiveFieldOneCard(card, field, field == LField && form == Formation.Horizontal ? 0 : -1); // убрать передачу индекса, есть reverse (да?)
         }
     }
 
@@ -403,6 +439,7 @@ public class GameManagerScript : MonoBehaviour
                         break;
 
                     case HasAbilities.APP:
+                        //Debug.Log(CurCard.name + " can app " + NearCards(curField, i).Count);
                         foreach (Transform card in NearCards(curField, i))
                         {
                             CardControler cardCC = card.GetComponent<CardControler>();
@@ -477,6 +514,8 @@ public class GameManagerScript : MonoBehaviour
 
     void EndGame(string result)
     {
+        PrintMovieInfo(result);
+
         LockScreen.SetActive(true);
         MakeMovie.interactable = false;
         RandomLeft.interactable = false;
@@ -484,8 +523,28 @@ public class GameManagerScript : MonoBehaviour
         VictoryResult.text = result;
     }
 
-    public void PrintMovieInfo(string info) // потом здесь будет вывод в окошко (наверное)
+    public void PrintMovieInfo(string info)
     {
-        Debug.Log(info);
+        //Debug.Log(info);
+
+        GameObject message = Instantiate(Message, log.content, false);
+
+        message.GetComponent<Text>().text = info;
+
+        log.velocity = new Vector2(0f, 1000f);
+    }
+
+    public void ClearLog()
+    {
+        foreach (Transform mes in log.content.transform)
+        {
+            GameObject.Destroy(mes.gameObject);
+        }
+    }
+
+    public string PrintTurn(bool b = true)
+    {
+        if (Turn && b) return "Right";
+        return "Left";
     }
 }

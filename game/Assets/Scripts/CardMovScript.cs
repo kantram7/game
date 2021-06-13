@@ -126,7 +126,7 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             int newIndex = DefaultTempCardParent.childCount;
             for (int i = 0; i < DefaultTempCardParent.childCount; i++)
             {
-                if (transform.position.x < DefaultTempCardParent.GetChild(i).position.x)
+                if (CompareAxis(transform.position, DefaultTempCardParent.GetChild(i).position))
                 {
                     newIndex = i;
                     if (TempCardGO.transform.GetSiblingIndex() < newIndex) newIndex--;
@@ -137,6 +137,12 @@ public class CardMovScript : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
             TempCardGO.transform.SetSiblingIndex(newIndex);
         }
+    }
+
+    bool CompareAxis(Vector3 MoveCardCoordinate, Vector3 CompareCardCoordinate)
+    {
+        if (GameManagerScript.Instance.form == Formation.Horizontal) return MoveCardCoordinate.x < CompareCardCoordinate.x;
+        return MoveCardCoordinate.y > CompareCardCoordinate.y;
     }
 
     // Если перетаскиваемая карта взята на одном игровом поле и сейчас находится над другим

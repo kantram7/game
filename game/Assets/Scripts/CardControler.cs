@@ -74,7 +74,7 @@ public class CardControler : MonoBehaviour
 
     public void GetDamage(CardControler enemyCard, AttackType damageType)
     {
-        if (!IsAlive() || !enemyCard.IsAlive()) return;
+        if (!IsAlive() || !enemyCard.IsAlive() || !enemyCard.CanAttack) return;
 
         if(CurEffect == Effect.APP)
         {
@@ -82,11 +82,11 @@ public class CardControler : MonoBehaviour
             {
                 AddEffect(Effect.NO);
                 DestroyApp();
-                GameManager.PrintMovieInfo(SelfCard.Name + " снял защиту у " + enemyCard.SelfCard.Name);
+                GameManager.PrintMovieInfo(enemyCard.SelfCard.Name + " снял защиту у " + GameManager.PrintTurn() + SelfCard.Name);
             }
             else
             {
-                GameManager.PrintMovieInfo(SelfCard.Name + " не пробил защиту у " + enemyCard.SelfCard.Name);
+                GameManager.PrintMovieInfo(enemyCard.SelfCard.Name + " не пробил защиту у " + SelfCard.Name);
             }
             return;
         }
@@ -125,6 +125,7 @@ public class CardControler : MonoBehaviour
         if (!IsAlive()) 
         {
             AddEffect(Effect.DEAD);
+            GameManager.PrintMovieInfo(SelfCard.Name + " уничтожен... ");
         }
     }
 
@@ -142,7 +143,7 @@ public class CardControler : MonoBehaviour
 
     public void GetApp()
     {
-        if (RamdomPersent(0.5) || !IsAlive()) return;
+        if (RamdomPersent(0.5) || !IsAlive() || CurEffect == Effect.APP) return;
 
         // проверка возможности апов в gamemanager
 
@@ -174,6 +175,13 @@ public class CardControler : MonoBehaviour
     public bool IsAlive()
     {
         return CurrentHealth > 0;
+    }
+
+    public bool CanAttack
+    {
+        get {
+            return SelfCard.Attack > 0;
+        }
     }
 
     public void DestroyCard()

@@ -1,0 +1,8 @@
+C:\Users\User\Desktop\game\Tumbleweed\bin\Debug\netcoreapp3.1\Tumbleweed.deps.json
+C:\Users\User\Desktop\game\Tumbleweed\bin\Debug\netcoreapp3.1\Tumbleweed.dll
+C:\Users\User\Desktop\game\Tumbleweed\bin\Debug\netcoreapp3.1\Tumbleweed.pdb
+C:\Users\User\Desktop\game\Tumbleweed\obj\Debug\netcoreapp3.1\Tumbleweed.AssemblyInfoInputs.cache
+C:\Users\User\Desktop\game\Tumbleweed\obj\Debug\netcoreapp3.1\Tumbleweed.AssemblyInfo.cs
+C:\Users\User\Desktop\game\Tumbleweed\obj\Debug\netcoreapp3.1\Tumbleweed.csproj.CoreCompileInputs.cache
+C:\Users\User\Desktop\game\Tumbleweed\obj\Debug\netcoreapp3.1\Tumbleweed.dll
+C:\Users\User\Desktop\game\Tumbleweed\obj\Debug\netcoreapp3.1\Tumbleweed.pdb

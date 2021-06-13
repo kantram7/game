@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "HYt3yNsZzwbae7W9V/NrB3JlKQfKEL9fm6RwN8bxBqb4l/3JFqgImy8OisBRpOuOxMNh06RWqoPmyssrQ5WU3g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\User\\Desktop\\game\\Tumbleweed\\Tumbleweed.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.1.2\\microsoft.aspnetcore.app.ref.3.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}

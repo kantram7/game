@@ -24,5 +24,7 @@ public class CardManagerScript : MonoBehaviour
         CardManager.AllCards.Add(new Archer("Sprites/test_img/archer"));
         CardManager.AllCards.Add(new Healer("Sprites/test_img/healer"));
         CardManager.AllCards.Add(new Warlock("Sprites/test_img/warlock"));
+
+        CardManager.AllCards.Add(TumbleweedUnitCreator.getTumbleweed("Sprites/test_img/tumbleweed"));
     }
 }

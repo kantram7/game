@@ -4,6 +4,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+using Tumbleweed;
+
 
 namespace Assets.Scripts.Units
 {
@@ -16,6 +18,7 @@ namespace Assets.Scripts.Units
         int Health { get; }
         int Cost { get; }
     }
+
 
     public interface ICardLogo
     {
@@ -57,16 +60,23 @@ namespace Assets.Scripts.Units
         }
     }
 
-
-    public class Archer : AbilityClass, ICard, ICardLogo
+    public abstract class ICardClass : AbilityClass, ICardLogo, ICard
     {
-        const string _name = "Archer";
-        int id = 0, _defence = 10, _attack = 25, _health = 20, _cost = 20;
+        readonly string _name;
+        int _id, _defence, _attack, _health, _cost;
         Sprite _img;
 
-        public Archer(string path) : base(HasAbilities.DISTANT, new List<UseAbilities>{ UseAbilities.CLONE, UseAbilities.HEAL })
+        public ICardClass(string path, string name, int id, int defence, int attack, int health, int cost, HasAbilities hasaba, List<UseAbilities> abis) : 
+            base(hasaba, abis)
         {
-            this._img = Resources.Load<Sprite>(path);
+            _name = name;
+            _id = id;
+            _defence = defence;
+            _attack = attack;
+            _health = health;
+            _cost = cost;
+
+            _img = Resources.Load<Sprite>(path);
         }
 
         public string Name { get { return _name; } }
@@ -75,87 +85,54 @@ namespace Assets.Scripts.Units
         public int Health { get { return _health; } }
         public int Cost { get { return _cost; } }
         public Sprite Logo { get { return _img; } }
-        public int Id { get { return id; } }
+        public int Id { get { return _id; } }
+    }
+
+
+
+    public class Archer : ICardClass
+    {
+        public Archer(string path) : base(path, "Archer", 0, 10, 25, 20, 20, HasAbilities.DISTANT, new List<UseAbilities> { UseAbilities.CLONE, UseAbilities.HEAL }) { }
+    }
+
+    public class Knight : ICardClass
+    {
+        public Knight(string path) : base(path, "Knight", 1, 50, 30, 100, 30, HasAbilities.NO, new List<UseAbilities> { UseAbilities.HEAL, UseAbilities.APP }) { }
+    }
+
+    public class Swordsman : ICardClass
+    {
+        public Swordsman(string path) : base(path, "Swordsman", 2, 20, 20, 50, 15, HasAbilities.APP, new List<UseAbilities> { UseAbilities.HEAL, UseAbilities.CLONE }) { }
+    }
+
+    public class Healer : ICardClass
+    {
+        public Healer(string path) : base(path, "Healer", 3, 5, 5, 30, 35, HasAbilities.HEAL, new List<UseAbilities> { UseAbilities.HEAL }) { }
+    }
+
+    public class Warlock : ICardClass
+    {
+        public Warlock(string path) : base(path, "Warlock", 4, 15, 15, 20, 45, HasAbilities.CLONE, new List<UseAbilities> { }) { }
+    }
+
+
+    public class TumbleweedUnit : ICardClass
+    {
+        public TumbleweedUnit(string path, TumbleweedClass tumbleweed) : base(path, tumbleweed.getName, 5, tumbleweed.getDefence,
+            tumbleweed.getAttack, tumbleweed.getHealth, 70, HasAbilities.NO, new List<UseAbilities> { }) {
+
+            _tumbleweed = tumbleweed;
+        }
+
+        TumbleweedClass _tumbleweed = null;
 
     }
 
-    public class Knight : AbilityClass, ICard, ICardLogo
+    static public class TumbleweedUnitCreator
     {
-        const string _name = "Knight";
-        int id = 1, _defence = 50, _attack = 30, _health = 100, _cost = 30;
-        Sprite _img;
-
-        public Knight(string path) : base(HasAbilities.APP, new List<UseAbilities> { UseAbilities.HEAL, UseAbilities.APP })
+        static public TumbleweedUnit getTumbleweed(string path)
         {
-            this._img = Resources.Load<Sprite>(path);
+            return new TumbleweedUnit(path, new TumbleweedClass());
         }
-
-        public string Name { get { return _name; } }
-        public int Defence { get { return _defence; } }
-        public int Attack { get { return _attack; } }
-        public int Health { get { return _health; } }
-        public int Cost { get { return _cost; } }
-        public Sprite Logo { get { return _img; } }
-        public int Id { get { return id; } }
-    }
-
-    public class Swordsman : AbilityClass, ICard, ICardLogo
-    {
-        const string _name = "Swordsman";
-        int id = 2, _defence = 20, _attack = 20, _health = 50, _cost = 15;
-        Sprite _img;
-
-        public Swordsman(string path) : base(HasAbilities.APP, new List<UseAbilities> { UseAbilities.CLONE, UseAbilities.HEAL })
-        {
-            this._img = Resources.Load<Sprite>(path);
-        }
-
-        public string Name { get { return _name; } }
-        public int Defence { get { return _defence; } }
-        public int Attack { get { return _attack; } }
-        public int Health { get { return _health; } }
-        public int Cost { get { return _cost; } }
-        public Sprite Logo { get { return _img; } }
-        public int Id { get { return id; } }
-    }
-
-    public class Healer : AbilityClass, ICard, ICardLogo
-    {
-        const string _name = "Healer";
-        int id = 3, _defence = 5, _attack = 5, _health = 30, _cost = 35;
-        Sprite _img;
-
-        public Healer(string path) : base(HasAbilities.HEAL, new List<UseAbilities> { UseAbilities.HEAL })
-        {
-            this._img = Resources.Load<Sprite>(path);
-        }
-
-        public string Name { get { return _name; } }
-        public int Defence { get { return _defence; } }
-        public int Attack { get { return _attack; } }
-        public int Health { get { return _health; } }
-        public int Cost { get { return _cost; } }
-        public Sprite Logo { get { return _img; } }
-        public int Id { get { return id; } }
-    }
-
-    public class Warlock : AbilityClass, ICard, ICardLogo
-    {
-        const string _name = "Warlock";
-        int id = 4, _defence = 15, _attack = 15, _health = 20, _cost = 45;
-        Sprite _img;
-
-        public Warlock(string path) : base(HasAbilities.CLONE, new List<UseAbilities>())
-        {
-            this._img = Resources.Load<Sprite>(path);
-        }
-
-        public string Name { get { return _name; } }
-        public int Defence { get { return _defence; } }
-        public int Attack { get { return _attack; } }
-        public int Health { get { return _health; } }
-        public int Cost { get { return _cost; } }
-        public Sprite Logo { get { return _img; } }
-        public int Id { get { return id; } }
     }
 }
