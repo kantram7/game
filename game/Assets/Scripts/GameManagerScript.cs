@@ -94,12 +94,12 @@ public class GameManagerScript : MonoBehaviour
     const int GoldAmount = 120;
 
     public Game CurGame;
-    public Transform LField, RField, Hand, VLField, VRField;
+    public Transform LField, RField, Hand, VLField, VRField, LThreeField, RThreeField, HLField, HRField;
     public GameObject Card, Message;
 
     public Button NewGame, RandomLeft, RandomRight;
     public Button PrevMovie, NexMovie, MakeMovie,
-                  TestButton, TestButton_2;
+                  TestButton, ButtonThree, ButtonVert, ButtonHori;
 
     public Text LMoney, RMoney, VictoryResult;
     public int LMoneySum, RMoneySum;
@@ -127,7 +127,7 @@ public class GameManagerScript : MonoBehaviour
 
     private void Awake()
     {
-        if(Instance == null) Instance = this;
+        if (Instance == null) Instance = this;
     }
 
 
@@ -144,11 +144,36 @@ public class GameManagerScript : MonoBehaviour
         PrevMovie.onClick.AddListener(ReturnPrevMovie);
 
         TestButton.onClick.AddListener(() => { Test(121); }); // Test
-        TestButton_2.onClick.AddListener(ChangeToVertical);
+        ButtonThree.onClick.AddListener(ChangeToThree);
+        ButtonVert.onClick.AddListener(ChangeToVertical);
+        ButtonHori.onClick.AddListener(ChangeToHorizontal);
 
         GiveFieldCards(CurGame.HandCards, Hand);
 
         MakeNewGame();
+    }
+
+    void ChangeToThree()
+    {
+        //form = Formation.Vertical;
+        form = Formation.Three;
+
+
+        LField.gameObject.SetActive(false);
+        //VLField.gameObject.SetActive(true);
+        LThreeField.gameObject.SetActive(true);
+        RField.gameObject.SetActive(false);
+        //VRField.gameObject.SetActive(true);
+        RThreeField.gameObject.SetActive(true);
+        //LField = VLField;
+        //RField = VRField;
+
+        LField = LThreeField;
+        RField = RThreeField;
+
+       ClearFields();
+       UpdateTreeFields();
+
     }
 
     void ChangeToVertical()
@@ -158,15 +183,47 @@ public class GameManagerScript : MonoBehaviour
 
         LField.gameObject.SetActive(false);
         VLField.gameObject.SetActive(true);
+        //LThreeField.gameObject.SetActive(true);
         RField.gameObject.SetActive(false);
         VRField.gameObject.SetActive(true);
+        //RThreeField.gameObject.SetActive(true);
         LField = VLField;
         RField = VRField;
+
+        //LField = LThreeField;
+        //RField = RThreeField;
+
+        ClearFields();
+    }
+
+    void ChangeToHorizontal()
+    {
+        //form = Formation.Vertical;
+        form = Formation.Horizontal;
+
+
+        LField.gameObject.SetActive(false);
+        //VLField.gameObject.SetActive(true);
+        //LThreeField.gameObject.SetActive(true);
+        HLField.gameObject.SetActive(true);
+        RField.gameObject.SetActive(false);
+        //VRField.gameObject.SetActive(true);
+        //RThreeField.gameObject.SetActive(true);
+        HRField.gameObject.SetActive(true);
+        //LField = VLField;
+        //RField = VRField;
+
+        LField = HLField;
+        RField = HRField;
+
+        ClearFields();
 
     }
 
     void ReturnNexMovie() // test
     {
+        PrintMovieInfo("--- Возврат отмененного хода ---");
+
         PrevMovie.interactable = true;
         ReturnHistory(++CurGame.CurIndex);
 
@@ -175,13 +232,34 @@ public class GameManagerScript : MonoBehaviour
 
     void ReturnPrevMovie() // test
     {
+        PrintMovieInfo("--- Отмена хода ---");
+
         NexMovie.interactable = true;
 
-        if (CurGame.NoNextHistory())  CreateHistory();
+        if (CurGame.NoNextHistory()) CreateHistory();
 
         ReturnHistory(--CurGame.CurIndex);
 
         if (CurGame.NoPrevHistory()) PrevMovie.interactable = false;
+    }
+
+    public void UpdateTreeFields()
+    {
+        if (!FormThree) return; // на всякий случай проверка, вобще может лучше ошибку кидать
+
+        for (int i = 0; i < LField.childCount - 1; i++)
+        {
+            if (LField.GetChild(i + 1).childCount == 0) LField.GetChild(i).gameObject.SetActive(false);
+            else LField.GetChild(i).gameObject.SetActive(true);
+        }
+
+        for (int i = RField.childCount - 1; i > 0; i--)
+        {
+            if (RField.GetChild(i - 1).childCount == 0) RField.GetChild(i).gameObject.SetActive(false);
+            else RField.GetChild(i).gameObject.SetActive(true);
+        }
+
+        Debug.Log("update fiels tree");
     }
 
     void ReturnHistory(int index)
@@ -197,21 +275,94 @@ public class GameManagerScript : MonoBehaviour
         List<(ICard, double, Effect)> LCardsAdd = movie.Item1.Item1;
         List<(ICard, double, Effect)> RCardsAdd = movie.Item2.Item1;
 
-        foreach (var cardInfo in LCardsAdd)
+        Debug.Log(LCardsAdd.Count);
+        Debug.Log(RCardsAdd.Count);
+
+        if (!FormThree)
         {
-            CreateCardPref(cardInfo.Item1, LField, -1, (CardControler CC) =>
+            foreach (var cardInfo in LCardsAdd)
             {
-                CC.AddEffect(cardInfo.Item3);
-                CC.UpdateCurrentHealth(cardInfo.Item2);
-            });
+                CreateCardPref(cardInfo.Item1, LField, -1, (CardControler CC) =>
+                {
+                    CC.AddEffect(cardInfo.Item3);
+                    CC.UpdateCurrentHealth(cardInfo.Item2);
+                });
+            }
+            foreach (var cardInfo in RCardsAdd)
+            {
+                CreateCardPref(cardInfo.Item1, RField, -1, (CardControler CC) =>
+                {
+                    CC.AddEffect(cardInfo.Item3);
+                    CC.UpdateCurrentHealth(cardInfo.Item2);
+                });
+            }
         }
-        foreach (var cardInfo in RCardsAdd)
-        {
-            CreateCardPref(cardInfo.Item1, RField, -1, (CardControler CC) =>
+        else { // 3-3 if here
+            int i = 0;
+            foreach (var cardInfo in RCardsAdd)
             {
-                CC.AddEffect(cardInfo.Item3);
-                CC.UpdateCurrentHealth(cardInfo.Item2);
-            });
+                if (cardInfo == default) continue;
+
+                CreateCardPref(cardInfo.Item1, RField.GetChild(i / 3), -1, (CardControler CC) =>
+                {
+                    CC.AddEffect(cardInfo.Item3);
+                    CC.UpdateCurrentHealth(cardInfo.Item2);
+                });
+
+                i++;
+            }
+
+            for (int k = LCardsAdd.Count - 1; k >= 0; k--)
+            {
+                var cardInfo = LCardsAdd[k];
+
+                if (cardInfo == default) continue;
+
+                CreateCardPref(cardInfo.Item1, LField.GetChild(k / 3), -1, (CardControler CC) =>
+                {
+                    CC.AddEffect(cardInfo.Item3);
+                    CC.UpdateCurrentHealth(cardInfo.Item2);
+                });
+
+            }
+            UpdateTreeFields();
+        }
+    }
+
+    void ReadThreeCardsToLists()
+    {
+        LCards = new List<(ICard, double, Effect)>();
+        RCards = new List<(ICard, double, Effect)>();
+
+        foreach (Transform subField in RField)
+        {
+            foreach (Transform card in subField)
+            {
+                CardControler CCard = card.GetComponent<CardControler>();
+                RCards.Add((CCard.SelfCard, CCard.CurrentHealth, CCard.CurEffect));
+            }
+            if (subField.childCount < 3)
+            {
+                for (int i = subField.childCount; i < 3; i++)
+                {
+                    RCards.Add(default);
+                }
+            }
+        }
+        foreach (Transform subField in LField)
+        {
+            foreach (Transform card in subField)
+            {
+                CardControler CCard = card.GetComponent<CardControler>();
+                LCards.Add((CCard.SelfCard, CCard.CurrentHealth, CCard.CurEffect));
+            }
+            if (subField.childCount < 3)
+            {
+                for (int j = subField.childCount; j < 3; j++)
+                {
+                    LCards.Add(default);
+                }
+            }
         }
     }
 
@@ -234,7 +385,9 @@ public class GameManagerScript : MonoBehaviour
 
     void CreateHistory()
     {
-        ReadCardsToLists();
+        if (FormThree) ReadThreeCardsToLists();
+        else ReadCardsToLists();
+
         CurGame.CreateHistory(LCards, LMoneySum, RCards, RMoneySum);
     }
 
@@ -243,7 +396,7 @@ public class GameManagerScript : MonoBehaviour
         UpdateFields();
     }
 
-         
+
     void Movie()
     {
         if (CheckVictory()) return; // чтоб не было ошибки при пустом поле (полях). Лучше кнопку хода при этом блокировать, конечно
@@ -278,6 +431,7 @@ public class GameManagerScript : MonoBehaviour
     {
         CurGame.ClearHistory();
         ClearLog();
+        PrintMovieInfo("### НОВАЯ ИГРА ###");
 
         CurGame.BlockChanges = false;
 
@@ -308,26 +462,55 @@ public class GameManagerScript : MonoBehaviour
         GiveFieldCards(cards, field);
 
         ChangeMoney(field, cards.Select(card => card.Cost).Sum());
+
+        if (form == Formation.Three) UpdateTreeFields();
     }
 
     void GiveFieldCards(List<ICard> cards, Transform field)
     {
-        Debug.Log(cards[0].Name);
+        //Debug.Log(cards[0].Name);
+
+        Debug.Log(cards.Count);
 
         foreach (ICard card in cards)
         {
             GiveFieldOneCard(card, field, field == LField && form == Formation.Horizontal ? 0 : -1); // убрать передачу индекса, есть reverse (да?)
+
+            Debug.Log(" - " + card.Name);
         }
+    }
+
+    public Transform GetFreeSubField(Transform field) // 3-3
+    {
+        if (!FormThree) return field;
+
+        if (field == LField)
+        {
+            for (int i = field.childCount - 1; i >= 0; i--)
+            {
+                if (field.GetChild(i).childCount < 3) return field.GetChild(i);
+            }
+        }
+        else // right
+        {
+            foreach (Transform subField in field)
+            {
+                if (subField.childCount < 3) return subField;
+            }
+        }
+
+        //throw new Exception("Нет места бл.....");
+        return field;
     }
 
     public void GiveFieldOneCard(ICard card, Transform field, int index = -1)
     {
-        CreateCardPref(card, field, index);
+        CreateCardPref(card, GetFreeSubField(field), index);
     }
 
     void CreateCardPref(ICard card, Transform field, int index = -1, Action<CardControler> MutCard = null)
     {
-        GameObject cardGO = Instantiate(Card, field, false);
+        GameObject cardGO = Instantiate(Card, (field), false);
         CardControler cardContr = cardGO.GetComponent<CardControler>();
 
         if (index != -1)
@@ -337,25 +520,51 @@ public class GameManagerScript : MonoBehaviour
 
         cardContr.Init(card);
 
+        getDropPlaceScript(field).countCards++;
+
         MutCard?.Invoke(cardContr);
     }
 
 
     public void ChangeMoney(Transform field, int changeCount)
     {
-        if (field == RField) RMoneySum -= changeCount;
-        else if (field == LField) LMoneySum -= changeCount;
-        else throw new ArgumentException("ChangeMoney get `" + field.name + "` field");
+        if ((field) == RField) RMoneySum -= changeCount;
+        else if ((field) == LField) LMoneySum -= changeCount;
+        else throw new ArgumentException("ChangeMoney get `" + (field).name + "` field");
 
         UpdateGold();
     }
 
+    public Transform SpecifyField(Transform field)
+    {
+        if (form == Formation.Three) return field.parent;
+        return field;
+    }
+
     void ClearFields()
     {
-        foreach (Transform field in new List<Transform> { RField, LField }) {
-            foreach (Transform card in field)
+        if (!FormThree)
+        {
+            foreach (Transform field in new List<Transform> { RField, LField })
             {
-                Destroy(card.gameObject);
+                foreach (Transform card in field)
+                {
+                    Destroy(card.gameObject);
+                }
+                getDropPlaceScript(field).countCards = 0;
+            }
+        }
+        else // for 3-3
+        {
+            foreach (Transform field in new List<Transform> { RField, LField })
+            {
+                foreach (Transform subField in field)
+                {
+                    foreach (Transform card in subField)
+                    {
+                        Destroy(card.gameObject);
+                    }
+                }
             }
         }
         LCards = new List<(ICard, double, Effect)>();
@@ -364,22 +573,77 @@ public class GameManagerScript : MonoBehaviour
 
     void UpdateFields()
     {
-        foreach (Transform field in new List<Transform> { RField, LField })
+        if (!FormThree)
         {
-            foreach (Transform card in field)
+            foreach (Transform field in new List<Transform> { RField, LField })
             {
-                CardControler curCard = card.GetComponent<CardControler>();
-                if (!curCard.IsAlive()) Destroy(card.gameObject);
+                foreach (Transform card in field)
+                {
+                    CardControler curCard = card.GetComponent<CardControler>();
+                    if (!curCard.IsAlive()) Destroy(card.gameObject);
+                }
             }
+        }
+        // Сделать красиво в один цикл
+        else
+        {
+            for (int i = 0; i < RField.childCount; i++)
+            {
+                foreach (Transform card in RField.GetChild(i))
+                {
+                    CardControler curCard = card.GetComponent<CardControler>();
+                    if (!curCard.IsAlive())
+                    {
+                        Destroy(card.gameObject);
+                        getDropPlaceScript(RField.GetChild(i)).countCards--;
+                        MoveTreeCards(RField.GetChild(i));
+                    }
+                }
+            }
+
+            for(int i = LField.childCount - 1; i >= 0; i--)
+            {
+                foreach (Transform card in LField.GetChild(i))
+                {
+                    CardControler curCard = card.GetComponent<CardControler>();
+                    if (!curCard.IsAlive())
+                    {
+                        Destroy(card.gameObject);
+                        getDropPlaceScript(LField.GetChild(i)).countCards--;
+                        MoveTreeCards(LField.GetChild(i));
+                    }
+                }
+            }
+
         }
         CheckVictory();
     }
 
+    void MoveTreeCards(Transform subField) // in whitch destroy card
+    {
+        Transform neib = GetBackNeighbour(subField);
+
+        if (getDropPlaceScript(subField).countCards < getDropPlaceScript(neib).countCards)
+        {
+            ThrowCardTo(neib, subField);
+            MoveTreeCards(neib);
+        }
+        else return;
+    }
+
+    void ThrowCardTo(Transform from, Transform to)
+    {
+        from.GetChild(from.childCount - 1).SetParent(to);
+        getDropPlaceScript(from).countCards--;
+        getDropPlaceScript(to).countCards++;
+    }
+
+
     public bool EnoughMoney(Transform field, int cost)
     {
-        if (field == RField) return cost <= RMoneySum;
-        else if (field == LField) return cost <= LMoneySum;
-        else throw new ArgumentException("EnoughMoney get `" + field.name + "` field");
+        if (SpecifyField(field) == RField) return cost <= RMoneySum;
+        else if (SpecifyField(field) == LField) return cost <= LMoneySum;
+        else throw new ArgumentException("EnoughMoney get `" + SpecifyField(field).name + "` field");
     }
 
     void UpdateGold()
@@ -391,105 +655,224 @@ public class GameManagerScript : MonoBehaviour
 
     void CloseAttack(bool turn)
     {
+        List<(Transform, Transform)> closeCards = CloseAttackCards();
+
         CardControler TurnFirstCard, TurnSecondCard;
 
-        if (turn)
-        {
-            TurnFirstCard = (RField).GetChild(0).GetComponent<CardControler>();
-            TurnSecondCard = (LField).GetChild(LField.childCount - 1).GetComponent<CardControler>();
-        }
-        else
-        {
-            TurnSecondCard = (RField).GetChild(0).GetComponent<CardControler>();
-            TurnFirstCard = (LField).GetChild(LField.childCount - 1).GetComponent<CardControler>();
+        foreach (var pair in closeCards) {
+            TurnFirstCard = pair.Item1.GetComponent<CardControler>();
+            TurnSecondCard = pair.Item2.GetComponent<CardControler>();
+
+            TurnSecondCard.GetDamage(TurnFirstCard, AttackType.CLOSE); // механизм сколько отнимать жизни в CC
+            TurnFirstCard.GetDamage(TurnSecondCard, AttackType.CLOSE); // ответная атака
         }
 
-        TurnSecondCard.GetDamage(TurnFirstCard, AttackType.CLOSE); // механизм сколько отнимать жизни в CC
-        TurnFirstCard.GetDamage(TurnSecondCard, AttackType.CLOSE); // ответная атака
+    }
 
+    // возвращает список карт, которые могут атаковать, как пары <аттакующая, атакуемая>
+    List<(Transform, Transform)> CloseAttackCards()
+    {
+        if (form == Formation.Horizontal)
+        {
+            (Transform, Transform) pair;
+
+            if (Turn)
+            {
+                pair = ((RField).GetChild(0), (LField).GetChild(LField.childCount - 1));
+                return new List<(Transform, Transform)> { pair };
+            }
+            pair = ((LField).GetChild(LField.childCount - 1), (RField).GetChild(0));
+            return new List<(Transform, Transform)> { pair };
+        }
+
+        else if (form == Formation.Vertical)
+        {
+            List<(Transform, Transform)> result = new List<(Transform, Transform)>();
+
+            for (int i = 0; i < (RField).childCount && i < (LField).childCount; i++)
+            {
+                if (Turn) result.Add(((RField).GetChild(i), (LField).GetChild(i)));
+                else result.Add(((LField).GetChild(i), (RField).GetChild(i)));
+            }
+            return result;
+        }
+
+        else // 3-3
+        {
+            List<(Transform, Transform)> result = new List<(Transform, Transform)>();
+
+            Transform CurLField = LField.GetChild(LField.childCount - 1), CurRField = RField.GetChild(0);
+
+
+            for (int i = 0; i < CurLField.childCount && i < CurRField.childCount; i++)
+            {
+                result.Add((CurLField.GetChild(i), CurRField.GetChild(i)));
+            }
+
+            return result;
+        }
     }
 
     void DistantAttack(CardControler attackCard, Transform enemyField, int index) // нужен ли?
     {
-        int atackedPosition = UnityEngine.Random.Range(0, (enemyField.childCount >= 3 ? 3 : enemyField.childCount));
-        CardControler enemyCard = enemyField.GetChild(atackedPosition).GetComponent<CardControler>();
+        if (FormThree)
+             while (enemyField.childCount == 0) enemyField = GetNeighbour(enemyField);
+
+        int atackedPositionIndex = UnityEngine.Random.Range(0, enemyField.childCount);
+        CardControler enemyCard = enemyField.GetChild(atackedPositionIndex).GetComponent<CardControler>();
         enemyCard.GetDamage(attackCard, AttackType.DISTANT);
     }
 
     void SpecAttacks(bool turn)
     {
-        List<Transform> fields = new List<Transform>{ (turn ? RField : LField), (turn ? LField : RField) };
+        List<Transform> fields = new List<Transform> { (turn ? RField : LField), (turn ? LField : RField) };
 
-        for(int j = 0; j < 2; j++)
+        for (int j = 0; j < 2; j++)
         {
             Transform curField = fields[j];
 
-            for (int i = 0; i < curField.childCount; i++)
+            if (FormThree)
             {
-                CardControler CurCard = curField.GetChild(i).GetComponent<CardControler>();
-
-                switch (CurCard.WhichAbilityHas())
+                for (int k = 0; k < curField.childCount; k++)
                 {
-                    case HasAbilities.HEAL:
-                        foreach(Transform card in NearCards(curField, i))
-                        {
-                            CardControler cardCC = card.GetComponent<CardControler>();
-                            if (cardCC.CanUseAbility(UseAbilities.HEAL)) cardCC.GetHeal();
-                        }
-                        break;
+                    for (int i = 0; i < curField.GetChild(k).childCount; i++)
+                    {
+                        CardControler CurCard = curField.GetChild(k).GetChild(i).GetComponent<CardControler>();
 
-                    case HasAbilities.APP:
-                        //Debug.Log(CurCard.name + " can app " + NearCards(curField, i).Count);
-                        foreach (Transform card in NearCards(curField, i))
-                        {
-                            CardControler cardCC = card.GetComponent<CardControler>();
-                            if (cardCC.CanUseAbility(UseAbilities.APP)) cardCC.GetApp();
-                        }
-                        break;
-                    case HasAbilities.CLONE:
-                        foreach (Transform card in NearCards(curField, i))
-                        {
-                            CardControler cardCC = card.GetComponent<CardControler>();
-                            if (cardCC.CanUseAbility(UseAbilities.CLONE) && cardCC.Clone())
-                            {
-                                CreateCardPref(cardCC.SelfCard, curField, card.GetSiblingIndex()); // Нужно клонировать с тем же здоровьем или как новую?
-                            }
-                        }
-                        break;
-                    case HasAbilities.DISTANT:
-                        if(!FirstCards(i, curField)) DistantAttack(CurCard, (j == 0 ? fields[1] : fields[0]), i);
-                        break;
+                        SpecAttackForCard(CurCard, curField.GetChild(k), i);
+                    }
+                }
+            }
+            else
+            {
 
-                    default: break;
+                for (int i = 0; i < curField.childCount; i++)
+                {
+                    CardControler CurCard = curField.GetChild(i).GetComponent<CardControler>();
+
+                    SpecAttackForCard(CurCard, curField, i);
                 }
             }
 
         }
     }
 
-    List<Transform> NearCards(Transform field, int index)
+    void SpecAttackForCard(CardControler CurCard, Transform curField, int i)
     {
+        switch (CurCard.WhichAbilityHas())
+        {
+            case HasAbilities.HEAL:
+                foreach (Transform card in NearCards(curField, AnotherField(curField), i))
+                {
+                    CardControler cardCC = card.GetComponent<CardControler>();
+                    if (cardCC.CanUseAbility(UseAbilities.HEAL)) cardCC.GetHeal();
+                }
+                break;
+
+            case HasAbilities.APP:
+                //Debug.Log(CurCard.name + " can app " + NearCards(curField, i).Count);
+                foreach (Transform card in NearCards(curField, AnotherField(curField), i))
+                {
+                    CardControler cardCC = card.GetComponent<CardControler>();
+                    if (cardCC.CanUseAbility(UseAbilities.APP)) cardCC.GetApp();
+                }
+                break;
+            case HasAbilities.CLONE:
+                foreach (Transform card in NearCards(curField, AnotherField(curField), i))
+                {
+                    CardControler cardCC = card.GetComponent<CardControler>();
+                    if (cardCC.CanUseAbility(UseAbilities.CLONE) && cardCC.Clone())
+                    {
+                        if (FormThree) curField = GetFreeSubField(curField.parent);
+
+                        CreateCardPref(cardCC.SelfCard, curField, card.GetSiblingIndex(), (CardControler CC) =>
+                        {
+                            CC.AddEffect(Effect.NO);
+                            CC.UpdateCurrentHealth(cardCC.CurrentHealth);
+                        }); // клонировать с тем же здоровьем
+                    }
+                }
+                break;
+            case HasAbilities.DISTANT:
+                if (!FirstCards(i, curField, AnotherField(curField))) DistantAttack(CurCard, AnotherField(curField), i);
+                break;
+
+            default: break;
+        }
+    }
+
+    List<Transform> NearCards(Transform turnField, Transform enemyField, int index)
+    {
+        Debug.Log("Near for card " + index + ", field = " + turnField.name);
+
         List<Transform> nearCards = new List<Transform>();
 
-        if (FirstCards(index, field)) return nearCards; // первые карты
+        if (FirstCards(index, turnField, enemyField)) return nearCards; // первые карты
 
-        if(field == LField)
+        if (FormThree)
         {
-            if (index != 0) nearCards.Add(field.GetChild(index - 1));
-            nearCards.Add(field.GetChild(index + 1));
+            Transform neib = GetNeighbour(turnField);
+            Transform backNeib = GetNeighbour(turnField);
+
+            if (neib != turnField && index < neib.childCount)
+                nearCards.Add(neib.GetChild(index));
+
+            if (backNeib != turnField && index < backNeib.childCount)
+                nearCards.Add(backNeib.GetChild(index));
+
         }
-        else
+
+        if (index != 0)
         {
-            if (index != field.childCount - 1) nearCards.Add(field.GetChild(index + 1));
-            nearCards.Add(field.GetChild(index - 1));
+            nearCards.Add(turnField.GetChild(index - 1));
+            //Debug.Log("0");
         }
+        if (index != turnField.childCount - 1)
+        {
+            nearCards.Add(turnField.GetChild(index + 1));
+            //Debug.Log("-1");
+        }
+
+        Debug.Log("NC - " + nearCards.Count);
+
         return nearCards;
     }
 
-    bool FirstCards(int index, Transform field)
+    // проверка что перед картой стоит карта противника
+    // если в горизонтальном построении карта первая - очевидно так и есть
+    bool FirstCards(int index, Transform turnField, Transform enemyField)
     {
-        if ((field == RField && index == 0) || (field == LField && index == LField.childCount - 1)) return true;
-        return false;
+        if (form == Formation.Horizontal)
+        {
+            if ((turnField == RField && index == 0) || (turnField == LField && index == LField.childCount - 1)) return true;
+            return false;
+        }
+        else if (form == Formation.Vertical)
+        {
+            if (index < enemyField.childCount) return true;
+            return false;
+        }
+        else // 3-3
+        {
+            if (turnField.GetSiblingIndex() == 0 && turnField.parent == RField && enemyField.childCount > index) return true;
+
+            if(turnField.GetSiblingIndex() == turnField.childCount - 1 && turnField.parent == LField && enemyField.childCount > index) return true;
+
+            return false;
+        }
+
+    }
+
+    // 3-3 +
+    Transform AnotherField(Transform field)
+    {
+        if(!FormThree) return field == RField ? LField : RField;
+        else
+        {
+            Transform anotherParantField = field.parent == RField ? LField : RField;
+
+            return anotherParantField.GetChild(anotherParantField.childCount - 1 - field.GetSiblingIndex());
+        }
     }
 
     bool CheckVictory()
@@ -546,5 +929,50 @@ public class GameManagerScript : MonoBehaviour
     {
         if (Turn && b) return "Right";
         return "Left";
+    }
+
+    // for 3-3 subFields, возврат поля что ближе к линии атаки от текущего
+    public Transform GetNeighbour(Transform subField)
+    {
+        Transform field = subField.parent;
+
+        int index = subField.GetSiblingIndex();
+
+        if (getDropPlaceScript(subField).Type == FieldType.LField)
+        {
+            //Debug.Log("if");
+            return index == field.childCount - 1 ? subField : field.GetChild(index + 1);
+        }
+        // RField
+        else
+        {
+            return index == 0 ? subField : field.GetChild(index - 1);
+        }
+    }
+
+    public Transform GetBackNeighbour(Transform subField)
+    {
+        Transform field = subField.parent;
+
+        int index = subField.GetSiblingIndex();
+
+        if (getDropPlaceScript(subField).Type == FieldType.LField)
+        {
+            return index == 0 ? subField : field.GetChild(index - 1);
+        }
+        // RField
+        else
+        {
+            return index == field.childCount - 1 ? subField : field.GetChild(index + 1);
+        }
+    }
+
+    DropPlaceScript getDropPlaceScript(Transform field)
+    {
+        return field.GetComponent<DropPlaceScript>();
+    }
+
+    public bool FormThree {
+        get { return form == Formation.Three; }
     }
 }

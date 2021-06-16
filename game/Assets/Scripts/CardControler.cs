@@ -33,8 +33,8 @@ public class CardControler : MonoBehaviour
 
     GameManagerScript GameManager;
 
-    double _currentHaelth;
-    public double CurrentHealth
+    int _currentHaelth;
+    public int CurrentHealth
     {
         get
         {
@@ -114,7 +114,7 @@ public class CardControler : MonoBehaviour
 
     public void UpdateCurrentHealth(double newCurHealth)
     {
-        CurrentHealth = newCurHealth < 0 ? 0 : newCurHealth;
+        CurrentHealth = (int)(newCurHealth < 0 ? 0 : newCurHealth);
         CardInfo.UpdateHealth();
     }
 
@@ -131,6 +131,8 @@ public class CardControler : MonoBehaviour
 
     public void GetHeal()
     {
+        Debug.Log("лечение попытка");
+
         if (!RamdomPersent(0.3)) return;
 
         if (CurrentHealth < SelfCard.Health && IsAlive())
@@ -143,6 +145,8 @@ public class CardControler : MonoBehaviour
 
     public void GetApp()
     {
+        Debug.Log("app попытка");
+
         if (RamdomPersent(0.5) || !IsAlive() || CurEffect == Effect.APP) return;
 
         // проверка возможности апов в gamemanager
@@ -159,6 +163,8 @@ public class CardControler : MonoBehaviour
 
     public bool Clone()
     {
+        Debug.Log("clone попытка");
+
         if (!RamdomPersent(0.1) || !IsAlive())
             return false;
 

@@ -15,11 +15,27 @@ public class DropPlaceScript : MonoBehaviour, IDropHandler, IPointerEnterHandler
 {
     public FieldType Type;
 
+    public int countCards = 0;
+
     public void OnDrop(PointerEventData eventData)
     {
         CardMovScript card = eventData.pointerDrag.GetComponent<CardMovScript>();
 
-        if (card) card.DefaultParent = transform;
+        if (card)
+        {
+            if (card.ThreeFormation)
+            {
+                if(card.CanMoveToSubField(transform, 1) && card.CanTakeFromSubField(card.PrevParent))
+                {
+                    card.DefaultParent = transform;
+                }
+            }
+            else
+            {
+                card.DefaultParent = transform;
+            }
+
+        }
 
         //Debug.Log(" 1 " + transform.name);
     }
