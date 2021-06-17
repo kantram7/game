@@ -143,81 +143,45 @@ public class GameManagerScript : MonoBehaviour
         NexMovie.onClick.AddListener(ReturnNexMovie);
         PrevMovie.onClick.AddListener(ReturnPrevMovie);
 
-        TestButton.onClick.AddListener(() => { Test(121); }); // Test
-        ButtonThree.onClick.AddListener(ChangeToThree);
-        ButtonVert.onClick.AddListener(ChangeToVertical);
-        ButtonHori.onClick.AddListener(ChangeToHorizontal);
+        TestButton.onClick.AddListener(() => { Test(121); }); // Test // пока тут очистка убитых карточек
+        ButtonThree.onClick.AddListener(() => { ChangeFormation(Formation.Three); });
+        ButtonVert.onClick.AddListener(() => { ChangeFormation(Formation.Vertical); });
+        ButtonHori.onClick.AddListener(() => { ChangeFormation(Formation.Horizontal); });
 
         GiveFieldCards(CurGame.HandCards, Hand);
 
         MakeNewGame();
     }
 
-    void ChangeToThree()
+    void ChangeFormation(Formation newForm)
     {
-        //form = Formation.Vertical;
-        form = Formation.Three;
-
+        form = newForm;
 
         LField.gameObject.SetActive(false);
-        //VLField.gameObject.SetActive(true);
-        LThreeField.gameObject.SetActive(true);
         RField.gameObject.SetActive(false);
-        //VRField.gameObject.SetActive(true);
-        RThreeField.gameObject.SetActive(true);
-        //LField = VLField;
-        //RField = VRField;
-
-        LField = LThreeField;
-        RField = RThreeField;
-
-       ClearFields();
-       UpdateTreeFields();
-
-    }
-
-    void ChangeToVertical()
-    {
-        form = Formation.Vertical;
-
-
-        LField.gameObject.SetActive(false);
-        VLField.gameObject.SetActive(true);
-        //LThreeField.gameObject.SetActive(true);
-        RField.gameObject.SetActive(false);
-        VRField.gameObject.SetActive(true);
-        //RThreeField.gameObject.SetActive(true);
-        LField = VLField;
-        RField = VRField;
-
-        //LField = LThreeField;
-        //RField = RThreeField;
-
-        ClearFields();
-    }
-
-    void ChangeToHorizontal()
-    {
-        //form = Formation.Vertical;
-        form = Formation.Horizontal;
-
-
-        LField.gameObject.SetActive(false);
-        //VLField.gameObject.SetActive(true);
-        //LThreeField.gameObject.SetActive(true);
-        HLField.gameObject.SetActive(true);
-        RField.gameObject.SetActive(false);
-        //VRField.gameObject.SetActive(true);
-        //RThreeField.gameObject.SetActive(true);
-        HRField.gameObject.SetActive(true);
-        //LField = VLField;
-        //RField = VRField;
-
-        LField = HLField;
-        RField = HRField;
 
         ClearFields();
 
+        switch (form) {
+            case Formation.Horizontal:
+                LField = HLField;
+                RField = HRField;
+                break;
+            case Formation.Vertical:
+                LField = VLField;
+                RField = VRField;
+                break;
+            case Formation.Three:
+                LField = LThreeField;
+                RField = RThreeField;
+                UpdateTreeFields();
+                break;
+            default:
+                break;
+        }
+
+        LField.gameObject.SetActive(true);
+        RField.gameObject.SetActive(true);
     }
 
     void ReturnNexMovie() // test
@@ -564,6 +528,7 @@ public class GameManagerScript : MonoBehaviour
                     {
                         Destroy(card.gameObject);
                     }
+                    getDropPlaceScript(subField).countCards = 0;
                 }
             }
         }
@@ -877,20 +842,32 @@ public class GameManagerScript : MonoBehaviour
 
     bool CheckVictory()
     {
-        if (LField.childCount != 0 && RField.childCount != 0)
+        int countLeft, countRight;
+
+        if(FormThree)
         {
-            return false;
+            countLeft = LField.GetChild(LField.childCount - 1).childCount;
+            countRight = RField.GetChild(0).childCount;
+        }
+        else
+        {
+            countLeft = LField.childCount;
+            countRight = RField.childCount;
         }
 
-        if (LField.childCount == 0 && RField.childCount == 0)
+        Debug.Log("Victory Left count = " + countLeft + "Victory Right count = " + countRight);
+
+        if (countLeft == 0 || countRight == 0)
         {
-            EndGame("Ќичь€");
+            if (countLeft == 0) EndGame("Right win");
+            else if (countRight == 0) EndGame("Left win");
+            else EndGame("Ќичь€");
         }
-        else if (LField.childCount == 0)
-        {
-            EndGame("Right win");
-        }
-        else EndGame("Left win");
+        else if (IsDraw()) EndGame("Ќичь€ (нет возможности дл€ хода)");
+        else return false;
+
+        Debug.Log("check victory draw");
+
 
         return true;
     }
@@ -974,5 +951,43 @@ public class GameManagerScript : MonoBehaviour
 
     public bool FormThree {
         get { return form == Formation.Three; }
+    }
+
+    // проверка ничьей, когда нет возможности дл€ атаки дл€ обеих сторон (перекати поле против перекати пол€)
+    bool IsDraw()
+    {
+        if(FormThree)
+        {
+            foreach (Transform subField in RField)
+            {
+                foreach(Transform card in subField)
+                {
+                    if (card.GetComponent<CardControler>().CanAttack && FirstCards(card.GetSiblingIndex(), subField, AnotherField(subField)) ||
+                        card.GetComponent<CardControler>().HasDistant()) return false;
+                }
+            }
+            foreach (Transform subField in LField)
+            {
+                foreach (Transform card in subField)
+                {
+                    if (card.GetComponent<CardControler>().CanAttack && FirstCards(card.GetSiblingIndex(), subField, AnotherField(subField)) ||
+                        card.GetComponent<CardControler>().HasDistant()) return false;
+                }
+            }
+        }
+        else
+        {
+            foreach (Transform card in RField)
+            {
+                if (card.GetComponent<CardControler>().CanAttack && FirstCards(card.GetSiblingIndex(), RField, LField) ||
+                    card.GetComponent<CardControler>().HasDistant()) return false;
+            }
+            foreach (Transform card in LField)
+            {
+                if (card.GetComponent<CardControler>().CanAttack && FirstCards(card.GetSiblingIndex(), LField, RField) ||
+                    card.GetComponent<CardControler>().HasDistant()) return false;
+            }
+        }
+        return true;
     }
 }

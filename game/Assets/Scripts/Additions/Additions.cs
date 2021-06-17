@@ -60,4 +60,46 @@ namespace Assets.Scripts.Additions
         }
     }
 
+    // типо доп штуки для полей
+    public static class TransformExtension
+    {
+        // возврат листа всех карт всех дочерних полей
+        public static List<Transform> getThreeFieldElements(this Transform field, bool reverse = false)
+        {
+            List<Transform> elements = new List<Transform>();
+
+            int i = 0, max = field.childCount;
+            if (reverse) { i = field.childCount - 1; max = -1; }
+
+            for (; i != max;)
+            {
+                for (int j = 0; j < field.GetChild(i).childCount; j++)
+                {
+                    elements.Add(field.GetChild(i).GetChild(j));
+                }
+
+                i = reverse ? i - 1 : i + 1;
+            }
+
+            return elements;
+        }
+
+        public static List<Transform> getFieldElements(this Transform field, bool reverse = false)
+        {
+            List<Transform> elements = new List<Transform>();
+
+            int i = 0, max = field.childCount;
+            if (reverse) { i = field.childCount - 1; max = -1; }
+
+            while (i != max)
+            {
+                elements.Add(field.GetChild(i));
+
+                i = (reverse ? i - 1 : i + 1);
+            }
+
+            return elements;
+        }
+    }
+
 }

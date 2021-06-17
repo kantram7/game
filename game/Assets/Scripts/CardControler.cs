@@ -161,6 +161,11 @@ public class CardControler : MonoBehaviour
         return SelfCard.Attack * 0.5;
     }
 
+    public bool HasDistant()
+    {
+        return WhichAbilityHas() == HasAbilities.DISTANT;
+    }
+
     public bool Clone()
     {
         Debug.Log("clone попытка");
