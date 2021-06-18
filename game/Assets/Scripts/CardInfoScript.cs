@@ -34,7 +34,7 @@ public class CardInfoScript : MonoBehaviour
         switch (CC.WhichAbilityHas())
         {
             case HasAbilities.DISTANT:
-                Instantiate(GameObject.Find("IconExample"), Abilities.transform, false);
+                // Instantiate(GameObject.Find("IconExample"), Abilities.transform, false); // отрисовка значков на карте
                 break;
             case HasAbilities.APP:
                 break;

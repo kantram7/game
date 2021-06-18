@@ -19,12 +19,12 @@ public class CardManagerScript : MonoBehaviour
 {
     public void Awake()
     {
-        CardManager.AllCards.Add(new Swordsman("Sprites/test_img/swordsman"));
-        CardManager.AllCards.Add(new Knight("Sprites/test_img/khight"));
-        CardManager.AllCards.Add(new Archer("Sprites/test_img/archer"));
-        CardManager.AllCards.Add(new Healer("Sprites/test_img/healer"));
-        CardManager.AllCards.Add(new Warlock("Sprites/test_img/warlock"));
+        CardManager.AllCards.Add(new Swordsman("Sprites/UnitsImg/cat_swordsman"));
+        CardManager.AllCards.Add(new Knight("Sprites/UnitsImg/cat_knight"));
+        CardManager.AllCards.Add(new Archer("Sprites/UnitsImg/cat_archer"));
+        CardManager.AllCards.Add(new Healer("Sprites/UnitsImg/cat_healer"));
+        CardManager.AllCards.Add(new Warlock("Sprites/UnitsImg/cat_warlock"));
 
-        CardManager.AllCards.Add(TumbleweedUnitCreator.getTumbleweed("Sprites/test_img/tumbleweed"));
+        CardManager.AllCards.Add(TumbleweedUnitCreator.getTumbleweed("Sprites/UnitsImg/cat_tumbleweed"));
     }
 }

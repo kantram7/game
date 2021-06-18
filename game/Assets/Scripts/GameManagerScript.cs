@@ -859,9 +859,9 @@ public class GameManagerScript : MonoBehaviour
 
         if (countLeft == 0 || countRight == 0)
         {
-            if (countLeft == 0) EndGame("Right win");
+            if (countLeft == 0 && countRight == 0) EndGame("Ничья");
+            else if (countLeft == 0) EndGame("Right win");
             else if (countRight == 0) EndGame("Left win");
-            else EndGame("Ничья");
         }
         else if (IsDraw()) EndGame("Ничья (нет возможности для хода)");
         else return false;
