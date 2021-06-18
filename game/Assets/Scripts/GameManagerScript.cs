@@ -155,12 +155,12 @@ public class GameManagerScript : MonoBehaviour
 
     void ChangeFormation(Formation newForm)
     {
+        ClearFields();
+
         form = newForm;
 
         LField.gameObject.SetActive(false);
-        RField.gameObject.SetActive(false);
-
-        ClearFields();
+        RField.gameObject.SetActive(false);        
 
         switch (form) {
             case Formation.Horizontal:
